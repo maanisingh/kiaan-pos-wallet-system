@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function CardsPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -342,13 +343,13 @@ export default function CardsPage() {
               </thead>
               <tbody>
                 {filteredCards.map((card, index) => (
-                  <motion.tr
-                    key={card.uid}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="border-b last:border-0 hover:bg-gray-50"
-                  >
+                  <Link key={card.uid} href={`/dashboard/cards/${card.uid}`} className="table-row-group">
+                    <motion.tr
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="border-b last:border-0 hover:bg-blue-50 cursor-pointer"
+                    >
                     <td className="py-4">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-gray-400" />
@@ -408,6 +409,7 @@ export default function CardsPage() {
                       </button>
                     </td>
                   </motion.tr>
+                  </Link>
                 ))}
               </tbody>
             </table>

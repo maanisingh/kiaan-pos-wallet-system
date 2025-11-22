@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useState } from 'react'
+import Link from 'next/link'
 
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -296,7 +297,8 @@ export default function CustomersPage() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Card className="hover:shadow-lg transition-shadow">
+            <Link href={`/dashboard/customers/${customer.id}`} className="block">
+              <Card className="hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -377,6 +379,7 @@ export default function CustomersPage() {
                 </div>
               </CardContent>
             </Card>
+            </Link>
           </motion.div>
         ))}
       </div>
