@@ -13,137 +13,124 @@ import {
   UserX,
   MoreVertical,
   MapPin,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery } from 'urql'
+import { GET_CUSTOMERS } from '@/lib/graphql-operations'
 
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Mock customer data
-  const customers = [
-    {
-      id: 'CUST-001',
-      name: 'John Mugisha',
-      email: 'john.m@email.com',
-      phone: '+256 772 123456',
-      location: 'Kampala',
-      cardsCount: 2,
-      totalBalance: 245000,
-      totalSpent: 1250000,
-      joinedDate: '2024-01-15',
-      lastActive: '2 hours ago',
-      status: 'active',
+  // Fetch real customer data from Hasura GraphQL
+  const [result] = useQuery({
+    query: GET_CUSTOMERS,
+    variables: {
+      limit: 100,
+      offset: 0,
     },
-    {
-      id: 'CUST-002',
-      name: 'Sarah Nakato',
-      email: 'sarah.n@email.com',
-      phone: '+256 772 234567',
-      location: 'Entebbe',
-      cardsCount: 1,
-      totalBalance: 567000,
-      totalSpent: 890000,
-      joinedDate: '2024-02-10',
-      lastActive: '15 minutes ago',
-      status: 'active',
-    },
-    {
-      id: 'CUST-003',
-      name: 'David Okello',
-      email: 'david.o@email.com',
-      phone: '+256 772 345678',
-      location: 'Jinja',
-      cardsCount: 1,
-      totalBalance: 0,
-      totalSpent: 450000,
-      joinedDate: '2024-01-20',
-      lastActive: '3 days ago',
-      status: 'inactive',
-    },
-    {
-      id: 'CUST-004',
-      name: 'Grace Nambi',
-      email: 'grace.n@email.com',
-      phone: '+256 772 456789',
-      location: 'Kampala',
-      cardsCount: 3,
-      totalBalance: 892000,
-      totalSpent: 2100000,
-      joinedDate: '2023-12-05',
-      lastActive: '1 hour ago',
-      status: 'active',
-    },
-    {
-      id: 'CUST-005',
-      name: 'Michael Ssali',
-      email: 'michael.s@email.com',
-      phone: '+256 772 567890',
-      location: 'Mbarara',
-      cardsCount: 1,
-      totalBalance: 123000,
-      totalSpent: 670000,
-      joinedDate: '2024-03-01',
-      lastActive: '30 minutes ago',
-      status: 'active',
-    },
-    {
-      id: 'CUST-006',
-      name: 'Betty Namusoke',
-      email: 'betty.n@email.com',
-      phone: '+256 772 678901',
-      location: 'Kampala',
-      cardsCount: 2,
-      totalBalance: 450000,
-      totalSpent: 1890000,
-      joinedDate: '2024-01-08',
-      lastActive: '1 week ago',
-      status: 'active',
-    },
-    {
-      id: 'CUST-007',
-      name: 'James Ochieng',
-      email: 'james.o@email.com',
-      phone: '+256 772 789012',
-      location: 'Entebbe',
-      cardsCount: 1,
-      totalBalance: 678000,
-      totalSpent: 560000,
-      joinedDate: '2024-02-20',
-      lastActive: '5 minutes ago',
-      status: 'active',
-    },
-    {
-      id: 'CUST-008',
-      name: 'Patricia Akello',
-      email: 'patricia.a@email.com',
-      phone: '+256 772 890123',
-      location: 'Jinja',
-      cardsCount: 1,
-      totalBalance: 156000,
-      totalSpent: 340000,
-      joinedDate: '2024-03-15',
-      lastActive: '2 days ago',
-      status: 'active',
-    },
-  ]
+  })
 
-  const stats = {
-    total: customers.length,
-    active: customers.filter((c) => c.status === 'active').length,
-    inactive: customers.filter((c) => c.status === 'inactive').length,
-    totalCards: customers.reduce((sum, c) => sum + c.cardsCount, 0),
-    totalBalance: customers.reduce((sum, c) => sum + c.totalBalance, 0),
-    totalSpent: customers.reduce((sum, c) => sum + c.totalSpent, 0),
+  const { data, fetching, error } = result
+
+  // Transform GraphQL data to match UI expectations
+  const customers = useMemo(() => {
+    if (!data?.customers) return []
+
+    return data.customers.map((customer: any) => {
+      const totalBalance = customer.cards?.reduce(
+        (sum: number, card: any) => sum + (card.balance || 0),
+        0
+      ) || 0
+
+      const cardsCount = customer.cards_aggregate?.aggregate?.count || 0
+      const activeCards = customer.cards?.filter((c: any) => c.status === 'active').length || 0
+
+      return {
+        id: customer.id,
+        name: customer.full_name || 'N/A',
+        email: customer.email || 'N/A',
+        phone: customer.phone_number || 'N/A',
+        location: customer.address || 'N/A',
+        cardsCount,
+        totalBalance,
+        totalSpent: 0, // Will be calculated from transaction history
+        joinedDate: customer.created_at,
+        lastActive: customer.updated_at,
+        status: activeCards > 0 ? 'active' : 'inactive',
+      }
+    })
+  }, [data])
+
+  const stats = useMemo(() => {
+    return {
+      total: customers.length,
+      active: customers.filter((c) => c.status === 'active').length,
+      inactive: customers.filter((c) => c.status === 'inactive').length,
+      totalCards: customers.reduce((sum, c) => sum + c.cardsCount, 0),
+      totalBalance: customers.reduce((sum, c) => sum + c.totalBalance, 0),
+      totalSpent: customers.reduce((sum, c) => sum + c.totalSpent, 0),
+    }
+  }, [customers])
+
+  const filteredCustomers = useMemo(() => {
+    if (!searchQuery) return customers
+
+    const query = searchQuery.toLowerCase()
+    return customers.filter(
+      (customer) =>
+        customer.name.toLowerCase().includes(query) ||
+        customer.email.toLowerCase().includes(query) ||
+        customer.phone.includes(query) ||
+        customer.id.toLowerCase().includes(query)
+    )
+  }, [customers, searchQuery])
+
+  // Loading state
+  if (fetching) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
+          <p className="text-gray-600">Loading customers...</p>
+        </div>
+      </div>
+    )
   }
 
-  const filteredCustomers = customers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.phone.includes(searchQuery) ||
-      customer.id.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="max-w-md">
+          <CardHeader>
+            <div className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <CardTitle>Error Loading Customers</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-600 mb-4">{error.message}</p>
+            <div className="bg-gray-50 p-3 rounded text-sm font-mono text-gray-700 overflow-x-auto">
+              {error.graphQLErrors?.[0]?.message || 'Failed to connect to GraphQL endpoint'}
+            </div>
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Troubleshooting:</strong>
+              </p>
+              <ul className="text-sm text-yellow-700 mt-2 space-y-1 list-disc list-inside">
+                <li>Check if NEXT_PUBLIC_HASURA_URL is set in environment variables</li>
+                <li>Verify Hasura instance is running and accessible</li>
+                <li>Confirm database schema is initialized with migrations</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
