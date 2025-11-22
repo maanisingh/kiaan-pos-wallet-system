@@ -14,78 +14,97 @@ import {
   Wallet,
   TrendingUp,
   Users,
-  Loader2,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { useState, useMemo } from 'react'
-import { useQuery } from 'urql'
-import { GET_CARDS } from '@/lib/graphql-operations'
-
-interface CardData {
-  uid: string
-  customer: string
-  balance: number
-  status: string
-  lastUsed: string
-  dailyLimit: number
-  todaySpent: number
-  totalTransactions: number
-  totalSpent: number
-}
+import { useState } from 'react'
 
 export default function CardsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
-  // Fetch real card data from Hasura GraphQL
-  const [result] = useQuery({
-    query: GET_CARDS,
-    variables: {
-      limit: 100,
-      offset: 0,
+  // Mock card data
+  const cards = [
+    {
+      uid: 'CARD-001-KMP',
+      customer: 'John Mugisha',
+      balance: 245000,
+      status: 'active',
+      lastUsed: '2 hours ago',
+      dailyLimit: 500000,
+      todaySpent: 125000,
     },
-  })
+    {
+      uid: 'CARD-002-ENT',
+      customer: 'Sarah Nakato',
+      balance: 567000,
+      status: 'active',
+      lastUsed: '15 minutes ago',
+      dailyLimit: 1000000,
+      todaySpent: 320000,
+    },
+    {
+      uid: 'CARD-003-JNJ',
+      customer: 'David Okello',
+      balance: 0,
+      status: 'inactive',
+      lastUsed: '3 days ago',
+      dailyLimit: 500000,
+      todaySpent: 0,
+    },
+    {
+      uid: 'CARD-004-KMP',
+      customer: 'Grace Nambi',
+      balance: 892000,
+      status: 'active',
+      lastUsed: '1 hour ago',
+      dailyLimit: 1000000,
+      todaySpent: 450000,
+    },
+    {
+      uid: 'CARD-005-MBR',
+      customer: 'Michael Ssali',
+      balance: 123000,
+      status: 'active',
+      lastUsed: '30 minutes ago',
+      dailyLimit: 500000,
+      todaySpent: 75000,
+    },
+    {
+      uid: 'CARD-006-KMP',
+      customer: 'Betty Namusoke',
+      balance: 450000,
+      status: 'lost',
+      lastUsed: '1 week ago',
+      dailyLimit: 500000,
+      todaySpent: 0,
+    },
+    {
+      uid: 'CARD-007-ENT',
+      customer: 'James Ochieng',
+      balance: 678000,
+      status: 'active',
+      lastUsed: '5 minutes ago',
+      dailyLimit: 1000000,
+      todaySpent: 234000,
+    },
+    {
+      uid: 'CARD-008-JNJ',
+      customer: 'Patricia Akello',
+      balance: 156000,
+      status: 'stolen',
+      lastUsed: '5 days ago',
+      dailyLimit: 500000,
+      todaySpent: 0,
+    },
+  ]
 
-  const { data, fetching, error } = result
-
-  // Transform GraphQL data to match UI expectations
-  const cards = useMemo<CardData[]>(() => {
-    if (!data?.cards) return []
-
-    return data.cards.map((card: any) => {
-      const totalSpent = card.transactions_aggregate?.aggregate?.sum?.amount || 0
-
-      return {
-        uid: card.uid,
-        customer: card.customer?.full_name || 'Unknown Customer',
-        balance: card.balance || 0,
-        status: card.status || 'inactive',
-        lastUsed: card.last_used_at
-          ? new Date(card.last_used_at).toLocaleDateString()
-          : 'Never',
-        dailyLimit: card.daily_limit || 500000,
-        todaySpent: 0, // Would need to filter today's transactions
-        totalTransactions: card.transactions_aggregate?.aggregate?.count || 0,
-        totalSpent,
-      }
-    })
-  }, [data])
-
-  const stats = useMemo(() => {
-    const total = cards.length
-    const active = cards.filter((c: CardData) => c.status === 'active').length
-    const inactive = cards.filter((c: CardData) => c.status === 'inactive').length
-    const blocked = cards.filter((c: CardData) => ['lost', 'stolen', 'blocked'].includes(c.status)).length
-    const totalBalance = data?.cards_aggregate?.aggregate?.sum?.balance || 0
-
-    return {
-      total,
-      active,
-      inactive,
-      blocked,
-      totalBalance,
-    }
-  }, [cards, data])
+  const stats = {
+    total: cards.length,
+    active: cards.filter((c) => c.status === 'active').length,
+    inactive: cards.filter((c) => c.status === 'inactive').length,
+    blocked: cards.filter((c) => ['lost', 'stolen'].includes(c.status)).length,
+    totalBalance: cards.reduce((sum, c) => sum + c.balance, 0),
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -107,56 +126,17 @@ export default function CardsPage() {
       inactive: 'bg-gray-100 text-gray-700 border-gray-200',
       lost: 'bg-red-100 text-red-700 border-red-200',
       stolen: 'bg-red-100 text-red-700 border-red-200',
-      blocked: 'bg-red-100 text-red-700 border-red-200',
     }
     return styles[status as keyof typeof styles] || styles.inactive
   }
 
-  const filteredCards = useMemo(() => {
-    if (!searchQuery && filterStatus === 'all') return cards
-
-    return cards.filter((card: CardData) => {
-      const matchesSearch =
-        card.uid.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        card.customer.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesFilter = filterStatus === 'all' || card.status === filterStatus
-      return matchesSearch && matchesFilter
-    })
-  }, [cards, searchQuery, filterStatus])
-
-  // Loading state
-  if (fetching) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto" />
-          <p className="text-gray-600">Loading cards...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="max-w-md">
-          <CardHeader>
-            <div className="flex items-center gap-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <CardTitle>Error Loading Cards</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p className="text-gray-600 mb-4">{error.message}</p>
-            <div className="bg-gray-50 p-3 rounded text-sm font-mono text-gray-700 overflow-x-auto">
-              {error.graphQLErrors?.[0]?.message || 'Failed to connect to GraphQL endpoint'}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  const filteredCards = cards.filter((card) => {
+    const matchesSearch =
+      card.uid.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      card.customer.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filterStatus === 'all' || card.status === filterStatus
+    return matchesSearch && matchesFilter
+  })
 
   return (
     <div className="space-y-6">
