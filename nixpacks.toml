@@ -1,9 +1,10 @@
 [phases.setup]
-nixPkgs = ["nodejs_22", "pnpm-9_x"]
+nixPkgs = ["nodejs_22"]
 
 [phases.install]
 cmds = [
-  "npm install -g corepack@0.24.1 && corepack enable",
+  "corepack enable",
+  "corepack prepare pnpm@9.15.4 --activate",
   "pnpm install --frozen-lockfile"
 ]
 
@@ -11,4 +12,4 @@ cmds = [
 cmds = ["pnpm build --filter=admin"]
 
 [start]
-cmd = "cd apps/admin && pnpm start"
+cmd = "cd apps/admin && pnpm start -p $PORT"

@@ -1,0 +1,17 @@
+node_modules
+.next
+.turbo
+dist
+build
+out
+coverage
+.cache
+.env*.local
+!.env.example
+*.log
+playwright-report
+test-results
+.DS_Store
+Thumbs.db
+*.md
+!README.md
