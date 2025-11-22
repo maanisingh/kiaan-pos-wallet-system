@@ -7,8 +7,11 @@
   "license": "MIT",
   "scripts": {
     "dev": "turbo dev",
-    "build": "pnpm install --frozen-lockfile && turbo build --filter=admin",
-    "start": "cd apps/admin && pnpm start",
+    "build": "pnpm install --frozen-lockfile && turbo build",
+    "start": "pm2 start ecosystem.config.js && node server.js",
+    "start:apps": "pm2 start ecosystem.config.js --no-daemon",
+    "start:proxy": "node server.js",
+    "stop": "pm2 delete all",
     "test": "turbo test",
     "test:e2e": "turbo test:e2e",
     "lint": "biome check .",
@@ -17,6 +20,11 @@
     "type-check": "turbo type-check",
     "clean": "turbo clean && rm -rf node_modules",
     "railway:deploy": "railway up --service admin"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6",
+    "pm2": "^5.3.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
