@@ -1,0 +1,67 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Testing
+coverage
+playwright-report
+test-results
+
+# Production builds
+.next
+dist
+build
+out
+*.local
+
+# Misc
+.DS_Store
+*.pem
+.turbo
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Vercel
+.vercel
+
+# Railway
+.railway
+
+# Expo
+.expo
+.expo-shared
+
+# Tauri
+target
+Cargo.lock
+
+# Supabase
+supabase/.temp
+supabase/.branches
+
+# IDE
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db

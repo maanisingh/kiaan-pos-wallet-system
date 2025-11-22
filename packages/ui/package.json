@@ -1,0 +1,33 @@
+{
+  "name": "@kiaan/ui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.tsx",
+  "types": "./src/index.tsx",
+  "exports": {
+    ".": "./src/index.tsx",
+    "./button": "./src/button.tsx",
+    "./card": "./src/card.tsx",
+    "./utils": "./src/lib/utils.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "biome check .",
+    "clean": "rm -rf .turbo node_modules"
+  },
+  "dependencies": {
+    "@radix-ui/react-slot": "^1.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
+  }
+}
