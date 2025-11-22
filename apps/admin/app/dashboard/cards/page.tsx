@@ -343,13 +343,14 @@ export default function CardsPage() {
               </thead>
               <tbody>
                 {filteredCards.map((card, index) => (
-                  <Link key={card.uid} href={`/dashboard/cards/${card.uid}`} className="table-row-group">
-                    <motion.tr
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="border-b last:border-0 hover:bg-blue-50 cursor-pointer"
-                    >
+                  <motion.tr
+                    key={card.uid}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => window.location.href = `/dashboard/cards/${card.uid}`}
+                    className="border-b last:border-0 hover:bg-blue-50 cursor-pointer"
+                  >
                     <td className="py-4">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-gray-400" />
@@ -404,12 +405,14 @@ export default function CardsPage() {
                       </span>
                     </td>
                     <td className="py-4 text-right">
-                      <button className="rounded p-1 hover:bg-gray-100">
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded p-1 hover:bg-gray-100"
+                      >
                         <MoreVertical className="h-4 w-4 text-gray-600" />
                       </button>
                     </td>
                   </motion.tr>
-                  </Link>
                 ))}
               </tbody>
             </table>
