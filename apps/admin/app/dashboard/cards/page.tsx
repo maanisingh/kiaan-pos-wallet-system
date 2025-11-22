@@ -21,6 +21,18 @@ import { useState, useMemo } from 'react'
 import { useQuery } from 'urql'
 import { GET_CARDS } from '@/lib/graphql-operations'
 
+interface CardData {
+  uid: string
+  customer: string
+  balance: number
+  status: string
+  lastUsed: string
+  dailyLimit: number
+  todaySpent: number
+  totalTransactions: number
+  totalSpent: number
+}
+
 export default function CardsPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -37,7 +49,7 @@ export default function CardsPage() {
   const { data, fetching, error } = result
 
   // Transform GraphQL data to match UI expectations
-  const cards = useMemo(() => {
+  const cards = useMemo<CardData[]>(() => {
     if (!data?.cards) return []
 
     return data.cards.map((card: any) => {
@@ -61,9 +73,9 @@ export default function CardsPage() {
 
   const stats = useMemo(() => {
     const total = cards.length
-    const active = cards.filter((c) => c.status === 'active').length
-    const inactive = cards.filter((c) => c.status === 'inactive').length
-    const blocked = cards.filter((c) => ['lost', 'stolen', 'blocked'].includes(c.status)).length
+    const active = cards.filter((c: CardData) => c.status === 'active').length
+    const inactive = cards.filter((c: CardData) => c.status === 'inactive').length
+    const blocked = cards.filter((c: CardData) => ['lost', 'stolen', 'blocked'].includes(c.status)).length
     const totalBalance = data?.cards_aggregate?.aggregate?.sum?.balance || 0
 
     return {
@@ -103,7 +115,7 @@ export default function CardsPage() {
   const filteredCards = useMemo(() => {
     if (!searchQuery && filterStatus === 'all') return cards
 
-    return cards.filter((card) => {
+    return cards.filter((card: CardData) => {
       const matchesSearch =
         card.uid.toLowerCase().includes(searchQuery.toLowerCase()) ||
         card.customer.toLowerCase().includes(searchQuery.toLowerCase())

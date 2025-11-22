@@ -21,6 +21,20 @@ import { useState, useMemo } from 'react'
 import { useQuery } from 'urql'
 import { GET_CUSTOMERS } from '@/lib/graphql-operations'
 
+interface CustomerData {
+  id: string
+  name: string
+  email: string
+  phone: string
+  location: string
+  cardsCount: number
+  totalBalance: number
+  totalSpent: number
+  joinedDate: string
+  lastActive: string
+  status: string
+}
+
 export default function CustomersPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -36,7 +50,7 @@ export default function CustomersPage() {
   const { data, fetching, error } = result
 
   // Transform GraphQL data to match UI expectations
-  const customers = useMemo(() => {
+  const customers = useMemo<CustomerData[]>(() => {
     if (!data?.customers) return []
 
     return data.customers.map((customer: any) => {
@@ -67,11 +81,11 @@ export default function CustomersPage() {
   const stats = useMemo(() => {
     return {
       total: customers.length,
-      active: customers.filter((c) => c.status === 'active').length,
-      inactive: customers.filter((c) => c.status === 'inactive').length,
-      totalCards: customers.reduce((sum, c) => sum + c.cardsCount, 0),
-      totalBalance: customers.reduce((sum, c) => sum + c.totalBalance, 0),
-      totalSpent: customers.reduce((sum, c) => sum + c.totalSpent, 0),
+      active: customers.filter((c: CustomerData) => c.status === 'active').length,
+      inactive: customers.filter((c: CustomerData) => c.status === 'inactive').length,
+      totalCards: customers.reduce((sum: number, c: CustomerData) => sum + c.cardsCount, 0),
+      totalBalance: customers.reduce((sum: number, c: CustomerData) => sum + c.totalBalance, 0),
+      totalSpent: customers.reduce((sum: number, c: CustomerData) => sum + c.totalSpent, 0),
     }
   }, [customers])
 
@@ -80,7 +94,7 @@ export default function CustomersPage() {
 
     const query = searchQuery.toLowerCase()
     return customers.filter(
-      (customer) =>
+      (customer: CustomerData) =>
         customer.name.toLowerCase().includes(query) ||
         customer.email.toLowerCase().includes(query) ||
         customer.phone.includes(query) ||
