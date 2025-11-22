@@ -6,7 +6,7 @@
     "watchPatterns": ["apps/admin/**", "packages/**"]
   },
   "deploy": {
-    "startCommand": "cd apps/admin && pnpm start",
+    "startCommand": "cd apps/admin && pnpm start -p ${PORT:-3000}",
     "healthcheckPath": "/",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",
