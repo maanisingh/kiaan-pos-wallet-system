@@ -12,6 +12,7 @@ import {
   BarChart3,
   Store,
   Monitor,
+  LogOut,
 } from 'lucide-react'
 import { cn } from '@kiaan/ui'
 
