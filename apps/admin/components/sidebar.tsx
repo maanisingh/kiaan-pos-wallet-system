@@ -9,21 +9,21 @@ import {
   Receipt,
   Building2,
   TrendingUp,
-  Wallet,
-  Settings,
-  LogOut,
+  BarChart3,
+  Store,
+  Monitor,
 } from 'lucide-react'
 import { cn } from '@kiaan/ui'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Cards', href: '/cards', icon: CreditCard },
-  { name: 'Customers', href: '/customers', icon: Users },
-  { name: 'Transactions', href: '/transactions', icon: Receipt },
-  { name: 'Branches', href: '/branches', icon: Building2 },
-  { name: 'Reports', href: '/reports', icon: TrendingUp },
-  { name: 'Top-Ups', href: '/top-ups', icon: Wallet },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Cards', href: '/dashboard/cards', icon: CreditCard },
+  { name: 'Customers', href: '/dashboard/customers', icon: Users },
+  { name: 'Transactions', href: '/dashboard/transactions', icon: Receipt },
+  { name: 'Merchants', href: '/dashboard/merchants', icon: Store },
+  { name: 'Terminals', href: '/dashboard/terminals', icon: Monitor },
+  { name: 'Reports', href: '/dashboard/reports', icon: TrendingUp },
+  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
 ]
 
 export function Sidebar() {
