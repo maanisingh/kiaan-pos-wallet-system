@@ -315,8 +315,9 @@ export default function MerchantsPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: index * 0.05 }}
+            onClick={() => window.location.href = `/dashboard/merchants/${merchant.id}`}
           >
-            <Card className="hover:shadow-lg transition-shadow">
+            <Card className="hover:shadow-lg hover:border-blue-300 transition-all cursor-pointer">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">

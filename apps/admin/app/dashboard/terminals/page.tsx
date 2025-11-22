@@ -420,7 +420,8 @@ export default function TerminalsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
-                    className="border-b last:border-0 hover:bg-gray-50"
+                    onClick={() => window.location.href = `/dashboard/terminals/${terminal.id}`}
+                    className="border-b last:border-0 hover:bg-blue-50 cursor-pointer"
                   >
                     <td className="py-4">
                       <div className="flex items-center gap-2">
@@ -486,7 +487,10 @@ export default function TerminalsPage() {
                       </span>
                     </td>
                     <td className="py-4 text-right">
-                      <button className="rounded p-1 hover:bg-gray-100">
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded p-1 hover:bg-gray-100"
+                      >
                         <MoreVertical className="h-4 w-4 text-gray-600" />
                       </button>
                     </td>
