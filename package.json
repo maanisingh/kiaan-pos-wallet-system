@@ -7,7 +7,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "turbo dev",
-    "build": "turbo build",
+    "build": "pnpm install --frozen-lockfile && turbo build --filter=admin",
+    "start": "cd apps/admin && pnpm start",
     "test": "turbo test",
     "test:e2e": "turbo test:e2e",
     "lint": "biome check .",
@@ -15,12 +16,6 @@
     "format": "biome format --write .",
     "type-check": "turbo type-check",
     "clean": "turbo clean && rm -rf node_modules",
-    "db:start": "supabase start",
-    "db:stop": "supabase stop",
-    "db:reset": "supabase db reset",
-    "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --local > packages/database/src/types.ts",
-    "db:seed": "supabase db seed",
     "railway:deploy": "railway up --service admin"
   },
   "devDependencies": {
