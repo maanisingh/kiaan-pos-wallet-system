@@ -12,7 +12,7 @@ export default function LandingPage() {
       description: 'System administration and management',
       icon: Shield,
       color: 'from-blue-500 to-blue-600',
-      href: 'https://pos-production-bae1.up.railway.app',
+      href: '/admin',
       features: ['Manage all customers & cards', 'Merchant onboarding', 'Transaction monitoring', 'Reports & analytics'],
       users: 'System Administrators',
     },
