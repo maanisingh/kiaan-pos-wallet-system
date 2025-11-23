@@ -9,7 +9,13 @@ cmds = [
 ]
 
 [phases.build]
-cmds = ["pnpm build --filter=admin"]
+cmds = [
+  "pnpm turbo build --filter=web",
+  "pnpm turbo build --filter=merchant",
+  "pnpm turbo build --filter=customer",
+  "pnpm turbo build --filter=pos",
+  "pnpm turbo build --filter=admin"
+]
 
 [start]
-cmd = "cd apps/admin && node_modules/.bin/next start -p $PORT"
+cmd = "pm2-runtime start ecosystem.config.js"
