@@ -10,11 +10,7 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "pnpm turbo build --filter=web",
-  "pnpm turbo build --filter=merchant",
-  "pnpm turbo build --filter=customer",
-  "pnpm turbo build --filter=pos",
-  "pnpm turbo build --filter=admin"
+  "cd apps/admin && pnpm run build"
 ]
 
 [start]

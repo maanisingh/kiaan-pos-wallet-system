@@ -8,53 +8,12 @@ const PORT = process.env.PORT || 8080;
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
-    services: {
-      landing: 'http://localhost:3000',
-      merchant: 'http://localhost:3001',
-      customer: 'http://localhost:3002',
-      pos: 'http://localhost:3003',
-      admin: 'http://localhost:3004'
-    }
+    service: 'admin-dashboard',
+    url: 'http://localhost:3004'
   });
 });
 
-// Route to merchant dashboard
-app.use('/merchant', createProxyMiddleware({
-  target: 'http://localhost:3001',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/merchant': '', // remove /merchant prefix when forwarding
-  },
-  onProxyReq: (proxyReq, req, res) => {
-    console.log(`[Proxy] ${req.method} ${req.url} -> merchant`);
-  }
-}));
-
-// Route to customer portal
-app.use('/customer', createProxyMiddleware({
-  target: 'http://localhost:3002',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/customer': '',
-  },
-  onProxyReq: (proxyReq, req, res) => {
-    console.log(`[Proxy] ${req.method} ${req.url} -> customer`);
-  }
-}));
-
-// Route to POS terminal
-app.use('/pos', createProxyMiddleware({
-  target: 'http://localhost:3003',
-  changeOrigin: true,
-  pathRewrite: {
-    '^/pos': '',
-  },
-  onProxyReq: (proxyReq, req, res) => {
-    console.log(`[Proxy] ${req.method} ${req.url} -> pos`);
-  }
-}));
-
-// Route to admin dashboard
+// Route /admin to admin dashboard
 app.use('/admin', createProxyMiddleware({
   target: 'http://localhost:3004',
   changeOrigin: true,
@@ -66,12 +25,12 @@ app.use('/admin', createProxyMiddleware({
   }
 }));
 
-// Route everything else to landing page
+// Route root to admin dashboard
 app.use('/', createProxyMiddleware({
-  target: 'http://localhost:3000',
+  target: 'http://localhost:3004',
   changeOrigin: true,
   onProxyReq: (proxyReq, req, res) => {
-    console.log(`[Proxy] ${req.method} ${req.url} -> landing`);
+    console.log(`[Proxy] ${req.method} ${req.url} -> admin (root)`);
   }
 }));
 
@@ -79,16 +38,15 @@ app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗
 ║                                                                ║
-║   🚀 Kiaan POS Wallet System - Multi-App Proxy                ║
+║   🚀 Kiaan POS Wallet System - Admin Dashboard                ║
 ║                                                                ║
 ║   Proxy Server:    http://localhost:${PORT}                        ║
 ║                                                                ║
 ║   📍 Routes:                                                   ║
-║   /               → Landing Page (port 3000)                   ║
+║   /               → Admin Dashboard (port 3004)                ║
 ║   /admin          → Admin Dashboard (port 3004)                ║
-║   /merchant       → Merchant Dashboard (port 3001)             ║
-║   /customer       → Customer Portal (port 3002)                ║
-║   /pos            → POS Terminal (port 3003)                   ║
+║                                                                ║
+║   Admin Dashboard is on the main page!                         ║
 ║                                                                ║
 ╚════════════════════════════════════════════════════════════════╝
   `);
