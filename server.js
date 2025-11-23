@@ -6,13 +6,14 @@ const PORT = process.env.PORT || 8080;
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
+  res.json({
+    status: 'healthy',
     services: {
       landing: 'http://localhost:3000',
       merchant: 'http://localhost:3001',
       customer: 'http://localhost:3002',
-      pos: 'http://localhost:3003'
+      pos: 'http://localhost:3003',
+      admin: 'http://localhost:3004'
     }
   });
 });
@@ -53,6 +54,18 @@ app.use('/pos', createProxyMiddleware({
   }
 }));
 
+// Route to admin dashboard
+app.use('/admin', createProxyMiddleware({
+  target: 'http://localhost:3004',
+  changeOrigin: true,
+  pathRewrite: {
+    '^/admin': '',
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    console.log(`[Proxy] ${req.method} ${req.url} -> admin`);
+  }
+}));
+
 // Route everything else to landing page
 app.use('/', createProxyMiddleware({
   target: 'http://localhost:3000',
@@ -72,6 +85,7 @@ app.listen(PORT, () => {
 ║                                                                ║
 ║   📍 Routes:                                                   ║
 ║   /               → Landing Page (port 3000)                   ║
+║   /admin          → Admin Dashboard (port 3004)                ║
 ║   /merchant       → Merchant Dashboard (port 3001)             ║
 ║   /customer       → Customer Portal (port 3002)                ║
 ║   /pos            → POS Terminal (port 3003)                   ║
