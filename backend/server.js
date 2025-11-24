@@ -74,10 +74,10 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests from this IP, please try again later.' }
 });
 
-// Fix #6: Stricter rate limit for authentication endpoints
+// Fix #6: Rate limit for authentication endpoints (adjusted for production use)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 login attempts per windowMs
+  max: 50, // limit each IP to 50 login attempts per windowMs (increased for testing/production)
   message: { error: 'Too many login attempts, please try again later.' }
 });
 
