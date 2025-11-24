@@ -144,6 +144,50 @@ pool.query('SELECT NOW()', (err, res) => {
   }
 });
 
+// Run database migrations on startup
+async function runMigrations() {
+  try {
+    console.log('🔧 Running database migrations...');
+
+    // Add phone column if it doesn't exist
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                       WHERE table_name='users' AND column_name='phone') THEN
+          ALTER TABLE users ADD COLUMN phone VARCHAR(20);
+          RAISE NOTICE 'Added phone column to users table';
+        END IF;
+      END $$;
+    `);
+
+    // Add updated_at column if it doesn't exist
+    await pool.query(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                       WHERE table_name='users' AND column_name='updated_at') THEN
+          ALTER TABLE users ADD COLUMN updated_at TIMESTAMP DEFAULT NOW();
+          RAISE NOTICE 'Added updated_at column to users table';
+        END IF;
+      END $$;
+    `);
+
+    // Set updated_at for existing users
+    await pool.query(`
+      UPDATE users SET updated_at = created_at WHERE updated_at IS NULL;
+    `);
+
+    console.log('✅ Database migrations completed successfully');
+  } catch (error) {
+    console.error('❌ Migration error:', error.message);
+    // Don't exit - let the app continue even if migrations fail
+  }
+}
+
+// Run migrations after connection is established
+runMigrations();
+
 // ==================== AUTH ENDPOINTS ====================
 
 // Fix #1: User Registration
@@ -288,6 +332,91 @@ app.get('/api/auth/me', verifyToken, async (req, res) => {
     res.json({ data: result.rows[0] });
   } catch (error) {
     console.error('Error fetching user:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user profile
+app.put('/api/auth/profile', verifyToken, async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+    const userId = req.user.id;
+
+    // Check if email is already taken by another user
+    if (email) {
+      const emailCheck = await pool.query(
+        'SELECT id FROM users WHERE email = $1 AND id != $2',
+        [email, userId]
+      );
+
+      if (emailCheck.rows.length > 0) {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
+    }
+
+    // Update user
+    const result = await pool.query(
+      'UPDATE users SET name = $1, email = $2, phone = $3, updated_at = NOW() WHERE id = $4 RETURNING id, email, name, phone, role, created_at',
+      [name, email, phone, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Change password
+app.put('/api/auth/change-password', verifyToken, async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+    const userId = req.user.id;
+
+    if (!current_password || !new_password) {
+      return res.status(400).json({ error: 'Current password and new password are required' });
+    }
+
+    if (new_password.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters long' });
+    }
+
+    // Get current user
+    const userResult = await pool.query(
+      'SELECT password FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Verify current password
+    const validPassword = await bcrypt.compare(current_password, userResult.rows[0].password);
+
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    // Update password
+    await pool.query(
+      'UPDATE users SET password = $1, updated_at = NOW() WHERE id = $2',
+      [hashedPassword, userId]
+    );
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
     res.status(500).json({ error: error.message });
   }
 });
