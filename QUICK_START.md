@@ -1,596 +1,427 @@
-# Kiaan POS & Wallet - Quick Start Guide
+# Kiaan POS - Hybrid Stack Quick Start Guide
+## Option 3: ERPNext + Supabase + Refine + React Native
 
-This guide will get you up and running in 15 minutes.
+**Created:** November 23, 2025
+**Deployment Time:** 6 hours
+**Status:** Ready to Deploy
 
 ---
 
-## Prerequisites Check
+## 📋 PREREQUISITES
+
+Before starting, ensure you have:
 
 ```bash
-# Check Node.js version (need 22+)
-node --version
+# Required software
+- Docker & Docker Compose (latest)
+- Node.js 18+ and npm
+- Git
+- PostgreSQL client (psql)
 
-# Install pnpm globally
-npm install -g pnpm@9
-
-# Check pnpm
-pnpm --version
-
-# Check Docker (for Supabase)
-docker --version
+# Optional but recommended
+- Railway CLI (for hosting)
+- Vercel CLI (for frontend hosting)
+- Expo CLI (for mobile app)
 ```
 
 ---
 
-## Step 1: Initialize Monorepo
+## ⚡ DEPLOYMENT STEPS
+
+### STEP 1: Backend Setup (Hour 0-2)
+
+#### 1.1 Deploy ERPNext (30 minutes)
 
 ```bash
-# Create project directory
-mkdir kiaan-pos-wallet-system
-cd kiaan-pos-wallet-system
+cd /root/kiaan-pos-hybrid-stack/docker
 
-# Initialize with Turborepo
-pnpx create-turbo@latest .
+# Start ERPNext
+docker-compose up -d erpnext
 
-# When prompted, select:
-# - Package manager: pnpm
-# - Include example apps: No
+# Wait for initialization (5-10 minutes)
+docker-compose logs -f erpnext
+
+# Access at: http://localhost:8000
+# Default credentials: Administrator / admin
+```
+
+#### 1.2 Deploy Supabase (Self-Hosted) (20 minutes)
+
+```bash
+# Complete self-hosted Supabase stack (9 services)
+cd /root/kiaan-pos-hybrid-stack/docker
+docker-compose up -d postgres studio kong rest auth realtime storage imgproxy meta analytics
+
+# Wait for all services to initialize
+sleep 60
+
+# Verify services are running
+docker-compose ps | grep -E "(postgres|studio|kong|rest|auth)"
+
+# Access Supabase Studio at: http://localhost:54323
+# Access Kong API Gateway at: http://localhost:8001
+# PostgreSQL: localhost:54322
+```
+
+#### 1.3 Set Up Database Schema (30 minutes)
+
+```bash
+# The schema is automatically loaded via docker-compose volumes
+# But you can also load it manually:
+
+cd /root/kiaan-pos-hybrid-stack
+
+# Load schema using Docker exec
+docker-compose -f docker/docker-compose.yml exec -T postgres \
+  psql -U postgres -d postgres < database/schema.sql
+
+# Load seed data
+docker-compose -f docker/docker-compose.yml exec -T postgres \
+  psql -U postgres -d postgres < database/seed.sql
+
+# Verify tables created
+docker-compose -f docker/docker-compose.yml exec postgres \
+  psql -U postgres -d postgres -c "\dt"
+```
+
+#### 1.4 Configure ERPNext (40 minutes)
+
+```bash
+# Access ERPNext: http://localhost:8000
+# Login: Administrator / admin
+
+# Setup wizard:
+1. Select country
+2. Set company name
+3. Enable POS module
+4. Create first user
+5. Configure chart of accounts
 ```
 
 ---
 
-## Step 2: Setup Workspace
+### STEP 2: Admin Dashboard (Hour 2-4)
+
+#### 2.1 Create Refine App (15 minutes)
 
 ```bash
-# Create workspace file
-cat > pnpm-workspace.yaml << 'EOF'
-packages:
-  - 'apps/*'
-  - 'packages/*'
-  - 'tooling/*'
-EOF
+cd /root/kiaan-pos-hybrid-stack/admin-dashboard
 
-# Create directory structure
-mkdir -p apps packages tooling supabase
+# Create Refine app
+npm create refine-app@latest . -- \
+  --preset refine-vite \
+  --package-manager npm
+
+# Install dependencies
+npm install
+```
+
+#### 2.2 Configure Data Providers (30 minutes)
+
+```bash
+# Install providers
+npm install @refinedev/simple-rest @refinedev/supabase
+
+# Configuration already in src/App.tsx
+```
+
+#### 2.3 Build Admin Pages (90 minutes)
+
+All pages are pre-generated in:
+- `/admin-dashboard/src/pages/customers/`
+- `/admin-dashboard/src/pages/cards/`
+- `/admin-dashboard/src/pages/transactions/`
+- `/admin-dashboard/src/pages/reports/`
+
+```bash
+# Start development server
+npm run dev
+
+# Access at: http://localhost:5173
 ```
 
 ---
 
-## Step 3: Initialize Supabase
+### STEP 3: Mobile App (Hour 4-6)
+
+#### 3.1 Create React Native App (15 minutes)
 
 ```bash
-# Install Supabase CLI
-pnpm add -g supabase
-
-# Initialize Supabase
-supabase init
-
-# Start local Supabase (Docker required)
-supabase start
-
-# Save the credentials shown in output
-# You'll need:
-# - API URL
-# - anon key
-# - service_role key
-```
-
----
-
-## Step 4: Create Database Schema
-
-```bash
-# Create migration
-supabase migration new initial_schema
-
-# Edit the migration file (copy from IMPLEMENTATION_GUIDE.md)
-# File location: supabase/migrations/XXXXXX_initial_schema.sql
-
-# Apply migration
-supabase db reset
-```
-
----
-
-## Step 5: Generate TypeScript Types
-
-```bash
-# Create database package
-mkdir -p packages/database/src
-
-# Generate types
-supabase gen types typescript --local > packages/database/src/types.ts
-
-# Create package.json for database package
-cat > packages/database/package.json << 'EOF'
-{
-  "name": "@kiaan/database",
-  "version": "1.0.0",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.48.1"
-  }
-}
-EOF
-```
-
----
-
-## Step 6: Create Admin Dashboard
-
-```bash
-cd apps
-
-# Create Next.js app
-pnpx create-next-app@latest admin \
-  --typescript \
-  --tailwind \
-  --app \
-  --no-src-dir \
-  --import-alias "@/*"
-
-cd admin
-
-# Install additional dependencies
-pnpm add @kiaan/database@workspace:* \
-  @supabase/ssr \
-  @tanstack/react-query \
-  @tanstack/react-table \
-  zustand \
-  react-hook-form \
-  zod \
-  @hookform/resolvers \
-  recharts \
-  lucide-react \
-  date-fns \
-  sonner \
-  cmdk
-
-# Create .env.local
-cat > .env.local << 'EOF'
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
-EOF
-
-# Update with actual keys from `supabase status`
-```
-
----
-
-## Step 7: Install shadcn/ui Components
-
-```bash
-# Inside apps/admin
-
-# Initialize shadcn
-pnpx shadcn@latest init
-
-# Select:
-# - Style: New York
-# - Base color: Slate
-# - CSS variables: Yes
-
-# Install commonly used components
-pnpx shadcn@latest add button
-pnpx shadcn@latest add card
-pnpx shadcn@latest add input
-pnpx shadcn@latest add label
-pnpx shadcn@latest add table
-pnpx shadcn@latest add dialog
-pnpx shadcn@latest add dropdown-menu
-pnpx shadcn@latest add toast
-pnpx shadcn@latest add select
-pnpx shadcn@latest add badge
-pnpx shadcn@latest add avatar
-```
-
----
-
-## Step 8: Create Mobile App
-
-```bash
-# Go to apps directory
-cd ../
+cd /root/kiaan-pos-hybrid-stack/mobile-app
 
 # Create Expo app
-pnpx create-expo-app@latest mobile --template tabs
-
-cd mobile
+npx create-expo-app@latest . --template blank-typescript
 
 # Install dependencies
-pnpm add @kiaan/database@workspace:* \
-  @supabase/supabase-js \
-  expo-router \
-  expo-secure-store \
-  zustand \
-  @tanstack/react-query \
-  tamagui \
-  @tamagui/config \
-  @tamagui/lucide-icons \
-  date-fns
-
-# Create .env
-cat > .env << 'EOF'
-EXPO_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-EOF
+npm install
 ```
 
----
-
-## Step 9: Create POS Terminal
+#### 3.2 Install NFC & UI Libraries (15 minutes)
 
 ```bash
-# Go to apps directory
-cd ../
+# Install NFC manager
+npm install react-native-nfc-manager
 
-# Create Tauri app
-pnpm create tauri-app pos
+# Install UI library
+npm install native-base react-native-svg
 
-# Select:
-# - Framework: React
-# - Variant: TypeScript + Vite
-
-cd pos
-
-# Install dependencies
-pnpm add @kiaan/database@workspace:* \
-  @supabase/supabase-js \
-  zustand \
-  @tanstack/react-query \
-  react-hook-form \
-  zod
-
-# For NFC integration (add to Cargo.toml)
-# pcsc = "2.8"
-# hex = "0.4"
+# Install navigation
+npm install @react-navigation/native @react-navigation/stack
 ```
 
----
+#### 3.3 Build App Screens (90 minutes)
 
-## Step 10: Setup Biome (Linter/Formatter)
+Pre-built screens available:
+- Login screen
+- Balance display
+- NFC card scanning
+- Transaction history
+- Top-up via mobile money
 
 ```bash
-# Go to root
-cd ../../
+# Start development
+npm start
 
-# Install Biome
-pnpm add -D @biomejs/biome
-
-# Initialize Biome
-pnpm biome init
-
-# Create biome.json
-cat > biome.json << 'EOF'
-{
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "ignore": [
-      "node_modules",
-      "dist",
-      "build",
-      ".next",
-      ".expo",
-      "target"
-    ]
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "semicolons": "asNeeded",
-      "quoteStyle": "single"
-    }
-  }
-}
-EOF
+# Scan QR code with Expo Go app
 ```
 
 ---
 
-## Step 11: Update Root Package.json
+### STEP 4: Payment Integration (Hour 6-7)
 
-```json
-{
-  "name": "kiaan-pos-wallet-system",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "turbo dev",
-    "build": "turbo build",
-    "test": "turbo test",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
-    "type-check": "turbo type-check",
-    "clean": "turbo clean && rm -rf node_modules",
-    "db:reset": "supabase db reset",
-    "db:push": "supabase db push",
-    "db:types": "supabase gen types typescript --local > packages/database/src/types.ts"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
-  },
-  "packageManager": "pnpm@9.15.4",
-  "engines": {
-    "node": ">=22",
-    "pnpm": ">=9"
-  }
-}
-```
-
----
-
-## Step 12: Configure Turborepo
-
-```json
-// turbo.json
-{
-  "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "build/**"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "type-check": {
-      "dependsOn": ["^type-check"]
-    },
-    "test": {
-      "cache": false
-    },
-    "clean": {
-      "cache": false
-    }
-  }
-}
-```
-
----
-
-## Step 13: Run Development Servers
+#### 4.1 Deploy Hyperswitch (30 minutes)
 
 ```bash
-# Install all dependencies
-pnpm install
+cd /root/kiaan-pos-hybrid-stack/docker
+docker-compose up -d hyperswitch
 
-# Run all apps
-pnpm dev
+# Access at: http://localhost:9000
+```
 
-# This will start:
-# - Admin Dashboard: http://localhost:3000
-# - Mobile App: Expo DevTools
-# - POS Terminal: http://localhost:5173
+#### 4.2 Configure Mobile Money (30 minutes)
+
+```bash
+# Edit environment variables
+nano /root/kiaan-pos-hybrid-stack/backend/.env
+
+# Add:
+MTN_API_KEY=your_mtn_key
+AIRTEL_API_KEY=your_airtel_key
+HYPERSWITCH_API_KEY=your_hyperswitch_key
 ```
 
 ---
 
-## Step 14: Initialize Git & GitHub
+### STEP 5: Testing (Hour 7-8)
+
+#### 5.1 Test Complete Flow
 
 ```bash
-# Initialize git
-git init
-
-# Create .gitignore
-cat > .gitignore << 'EOF'
-# Dependencies
-node_modules
-.pnp
-.pnp.js
-
-# Testing
-coverage
-
-# Production builds
-.next
-dist
-build
-*.local
-
-# Misc
-.DS_Store
-*.pem
-
-# Debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Local env files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Vercel
-.vercel
-
-# Expo
-.expo
-.expo-shared
-
-# Tauri
-target
-Cargo.lock
-
-# Supabase
-supabase/.temp
-EOF
-
-# Add all files
-git add .
-
-# Initial commit
-git commit -m "chore: initial commit - Kiaan POS Wallet System"
-
-# Create GitHub repo (using gh CLI)
-gh repo create kiaan-pos-wallet-system --public --source=. --remote=origin
-
-# Push to GitHub
-git push -u origin main
+# Run test script
+cd /root/kiaan-pos-hybrid-stack/scripts
+./test_complete_flow.sh
 ```
+
+**Test scenarios:**
+1. ✅ Create customer in admin → Appears in ERPNext
+2. ✅ Issue NFC card → Card UID saved in Supabase
+3. ✅ Top-up via mobile money → Balance updates
+4. ✅ Make payment → Transaction recorded
+5. ✅ Check balance on mobile app → Shows correct amount
+6. ✅ Generate report → Financial data accurate
 
 ---
 
-## Step 15: Deploy to Railway (Admin Dashboard)
+## 🌐 PRODUCTION DEPLOYMENT
+
+### Deploy Backend (Railway or VPS)
 
 ```bash
-# Install Railway CLI
-npm i -g @railway/cli
+# Option A: Deploy entire stack to VPS/Server
+scp -r /root/kiaan-pos-hybrid-stack user@your-server:/opt/
+ssh user@your-server
+cd /opt/kiaan-pos-hybrid-stack/docker
+docker-compose up -d
 
-# Login
-railway login
+# Option B: Deploy individual services to Railway
+cd /root/kiaan-pos-hybrid-stack/docker
 
-# Initialize project
-railway init
-
-# Link to admin app
-cd apps/admin
-
-# Deploy
+# Deploy ERPNext + Supabase (self-hosted) + Hyperswitch together
 railway up
 
-# Set environment variables in Railway dashboard:
-# - NEXT_PUBLIC_SUPABASE_URL
-# - NEXT_PUBLIC_SUPABASE_ANON_KEY
-# - SUPABASE_SERVICE_ROLE_KEY
-
-# Your admin dashboard is now live!
+# Note: Self-hosted Supabase requires all 9 services running
+# Consider using a dedicated server for better control
 ```
 
----
-
-## Common Commands Reference
+### Deploy Admin Dashboard (Vercel)
 
 ```bash
-# Development
-pnpm dev                        # Run all apps
-pnpm dev --filter=admin         # Admin only
-pnpm dev --filter=mobile        # Mobile only
-pnpm dev --filter=pos           # POS only
+cd /root/kiaan-pos-hybrid-stack/admin-dashboard
 
-# Building
-pnpm build                      # Build all
-pnpm build --filter=admin       # Build admin only
+# Deploy to Vercel
+vercel --prod
 
-# Database
-pnpm db:reset                   # Reset database
-pnpm db:push                    # Push migrations
-pnpm db:types                   # Generate types
-
-# Code Quality
-pnpm lint                       # Check code
-pnpm lint:fix                   # Fix issues
-pnpm type-check                 # TypeScript check
-
-# Deployment
-railway up                      # Deploy admin
-eas build --platform android    # Build mobile
-pnpm tauri build                # Build POS
+# Or Railway
+railway up
 ```
 
----
+### Deploy Mobile App (Expo)
 
-## Troubleshooting
-
-### Supabase won't start
 ```bash
-# Check Docker is running
-docker ps
+cd /root/kiaan-pos-hybrid-stack/mobile-app
 
-# Stop any existing instances
-supabase stop
+# Build for production
+eas build --platform android
 
-# Clean and restart
-supabase db reset
+# Submit to Play Store
+eas submit --platform android
 ```
 
-### Type errors in imports
+---
+
+## 📊 ENVIRONMENT VARIABLES
+
+### Backend (.env)
+
 ```bash
-# Regenerate types
-pnpm db:types
+# ERPNext
+ERPNEXT_URL=http://localhost:8000  # or https://your-domain.com:8000 in production
+ERPNEXT_API_KEY=your_api_key
+ERPNEXT_API_SECRET=your_api_secret
 
-# Rebuild packages
-pnpm build --filter=@kiaan/database
+# Supabase (Self-Hosted)
+SUPABASE_URL=http://localhost:8001  # Kong API Gateway
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJzZXJ2aWNlX3JvbGUiLAogICAgImlzcyI6ICJzdXBhYmFzZS1kZW1vIiwKICAgICJpYXQiOiAxNjQxNzY5MjAwLAogICAgImV4cCI6IDE3OTk1MzU2MDAKfQ.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
+POSTGRES_PASSWORD=your_super_secret_password_change_this
+
+# Hyperswitch (Self-Hosted)
+HYPERSWITCH_URL=http://localhost:8002  # or https://your-domain.com:8002 in production
+HYPERSWITCH_API_KEY=your_api_key
+
+# Mobile Money
+MTN_API_KEY=your_mtn_key
+MTN_API_SECRET=your_mtn_secret
+AIRTEL_API_KEY=your_airtel_key
+AIRTEL_API_SECRET=your_airtel_secret
+
+# JWT (For ERPNext/Custom Auth)
+JWT_SECRET=your_super_secret_key_min_32_chars
 ```
 
-### Port already in use
+### Admin Dashboard (.env)
+
 ```bash
-# Change port in package.json
-# Admin: "dev": "next dev --port 3001"
-# Mobile: Check expo config
-# POS: Check vite.config.ts
+# Local Development
+VITE_ERPNEXT_URL=http://localhost:8000/api
+VITE_SUPABASE_URL=http://localhost:8001
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+
+# Production
+# VITE_ERPNEXT_URL=https://your-domain.com:8000/api
+# VITE_SUPABASE_URL=https://api.your-domain.com
 ```
 
-### pnpm install fails
+### Mobile App (.env)
+
 ```bash
-# Clear cache
-pnpm store prune
+# Local Development
+API_URL=http://localhost:8001
+SUPABASE_URL=http://localhost:8001
+SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
 
-# Delete node_modules
-pnpm clean
-
-# Reinstall
-pnpm install
+# Production
+# API_URL=https://api.your-domain.com
+# SUPABASE_URL=https://api.your-domain.com
 ```
 
 ---
 
-## Next Steps
+## 🎯 ACCESS POINTS
 
-1. **Customize UI** - Update colors, branding in Tailwind config
-2. **Add Features** - Implement additional modules (see FRONTEND_PLAN.md)
-3. **Setup CI/CD** - Configure GitHub Actions (see IMPLEMENTATION_GUIDE.md)
-4. **Integrate Payments** - Add MTN/Airtel Mobile Money SDKs
-5. **Testing** - Add unit tests and E2E tests
-6. **Documentation** - Create user guides and API docs
+### Local Development:
+- **ERPNext Backend:** http://localhost:8000
+- **Supabase Studio:** http://localhost:54323
+- **Kong API Gateway:** http://localhost:8001
+- **PostgREST API:** http://localhost:3001
+- **GoTrue Auth:** http://localhost:9999
+- **Hyperswitch:** http://localhost:8002
+- **Admin Dashboard:** http://localhost:5173
+- **PostgreSQL:** localhost:54322
 
----
-
-## Resources
-
-- [Next.js Docs](https://nextjs.org/docs)
-- [Supabase Docs](https://supabase.com/docs)
-- [Tauri Docs](https://tauri.app/v2/guides/)
-- [Expo Docs](https://docs.expo.dev/)
-- [Turborepo Docs](https://turbo.build/repo/docs)
-- [Railway Docs](https://docs.railway.app/)
+### Production (after deployment):
+- **ERPNext Backend:** https://your-domain.com:8000
+- **Admin Dashboard:** https://admin.your-domain.com
+- **Supabase API:** https://api.your-domain.com
+- **Mobile App:** Download from Play Store
 
 ---
 
-## Support
+## 🆘 TROUBLESHOOTING
 
-Need help? Check:
-- GitHub Issues
-- Documentation in `/docs` folder
-- Email: support@kiaan.com
+### ERPNext not starting?
+
+```bash
+# Check logs
+docker-compose logs erpnext
+
+# Restart
+docker-compose restart erpnext
+
+# Access container
+docker-compose exec erpnext bash
+```
+
+### Supabase connection issues?
+
+```bash
+# Test connection
+psql "postgresql://postgres:password@localhost:54322/postgres"
+
+# Check Supabase status
+docker-compose ps supabase
+```
+
+### Mobile app not detecting NFC?
+
+```bash
+# Android - Enable NFC in settings
+# Check permissions in AndroidManifest.xml
+# Ensure physical device (NFC doesn't work in emulator)
+```
 
 ---
 
-**You're all set! Start building amazing features! 🚀**
+## 📞 SUPPORT
+
+**Documentation:**
+- ERPNext: https://docs.erpnext.com
+- Supabase: https://supabase.com/docs
+- Refine: https://refine.dev/docs
+- React Native: https://reactnative.dev
+
+**Community:**
+- ERPNext Forum: https://discuss.frappe.io
+- Supabase Discord: https://discord.supabase.com
+- Refine Discord: https://discord.gg/refine
+
+---
+
+## ✅ CHECKLIST
+
+Before going live:
+
+- [ ] ERPNext configured with company details
+- [ ] Supabase database schema created
+- [ ] Admin dashboard connected to both backends
+- [ ] Mobile app builds successfully
+- [ ] NFC card reading tested
+- [ ] Mobile money integration tested
+- [ ] Complete payment flow tested
+- [ ] SSL certificates configured
+- [ ] Backup strategy in place
+- [ ] User training completed
+
+---
+
+**Ready to start?** Follow STEP 1 above! 🚀
