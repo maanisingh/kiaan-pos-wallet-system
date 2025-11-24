@@ -1423,6 +1423,45 @@ Hours: 24/7`;
   }
 });
 
+// ==================== ADMIN MIGRATION ENDPOINT ====================
+
+// Database Migration Endpoint (admin only - for initial setup)
+app.post('/api/admin/run-migration', async (req, res) => {
+  try {
+    const { sql, adminSecret } = req.body;
+
+    // Simple security check
+    const validSecrets = ['kiaan-2024-admin', process.env.ADMIN_SECRET];
+    if (!validSecrets.includes(adminSecret)) {
+      return res.status(403).json({ error: 'Unauthorized - Invalid admin secret' });
+    }
+
+    console.log('🔄 Running database migration...');
+    console.log('SQL length:', sql ? sql.length : 0, 'bytes');
+
+    if (!sql || sql.trim().length === 0) {
+      return res.status(400).json({ error: 'No SQL provided' });
+    }
+
+    // Run the SQL
+    const result = await pool.query(sql);
+
+    console.log('✅ Migration completed successfully');
+
+    res.json({
+      success: true,
+      message: 'Migration completed successfully'
+    });
+  } catch (error) {
+    console.error('❌ Migration error:', error);
+    res.status(500).json({
+      error: 'Migration failed',
+      details: error.message,
+      code: error.code
+    });
+  }
+});
+
 // ==================== HEALTH CHECK ====================
 
 app.get('/health', (req, res) => {
