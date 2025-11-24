@@ -1480,33 +1480,16 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'Kiaan POS API',
-    version: '2.0.0 - Secured',
-    security_features: [
-      'JWT Authentication',
-      'Input Sanitization (XSS Protection)',
-      'SQL Injection Protection',
-      'Rate Limiting',
-      'Security Headers (Helmet)',
-      'CORS Protection',
-      'Transaction Validation'
-    ],
-    authentication: {
-      login: 'POST /api/auth/login',
-      register: 'POST /api/auth/register',
-      me: 'GET /api/auth/me (requires token)'
-    },
-    endpoints: {
-      customers: '/api/customers',
-      cards: '/api/cards',
-      transactions: '/api/transactions',
-      dashboard: '/api/dashboard/stats',
-      analytics: '/api/analytics/transactions',
-      branches: '/api/branches',
-      topup: '/api/topup/*',
-      ussd: '/api/ussd (public)'
-    },
-    note: 'All endpoints require JWT authentication except /health, /, and /api/ussd'
+    name: 'Kiaan POS API',
+    version: '2.0.0',
+    status: 'operational',
+    message: 'Backend API is running',
+    frontend: 'https://kiaan.alexandratechlab.com',
+    admin: 'https://kiaan.alexandratechlab.com/admin',
+    documentation: {
+      health: 'GET /health',
+      api_docs: 'Contact administrator for API documentation'
+    }
   });
 });
 
