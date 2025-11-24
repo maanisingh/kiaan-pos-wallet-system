@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "turbo dev",
     "build": "pnpm install --frozen-lockfile && turbo build",
-    "start": "pm2 start ecosystem.config.js && node server.js",
+    "start": "node start-railway.js",
+    "start:pm2": "pm2 start ecosystem.config.js && node server.js",
     "start:apps": "pm2 start ecosystem.config.js --no-daemon",
     "start:proxy": "node server.js",
     "stop": "pm2 delete all",

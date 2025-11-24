@@ -11,7 +11,31 @@ const { body, validationResult } = require('express-validator');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4500;
+
+// ==================== DATABASE CONFIGURATION ====================
+
+// Support both DATABASE_URL (Railway/Heroku) and individual DB_* variables (local)
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  // Use DATABASE_URL if available (Railway, Heroku, etc.)
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  };
+  console.log('📊 Using DATABASE_URL for connection');
+} else {
+  // Fall back to individual variables for local development
+  poolConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'postgres',
+  };
+  console.log(`📊 Using individual DB variables (${poolConfig.host}:${poolConfig.port}/${poolConfig.database})`);
+}
 
 // ==================== SECURITY CONFIGURATION ====================
 
@@ -109,13 +133,7 @@ const optionalAuth = (req, res, next) => {
 };
 
 // Database connection
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-});
+const pool = new Pool(poolConfig);
 
 // Test database connection
 pool.query('SELECT NOW()', (err, res) => {
